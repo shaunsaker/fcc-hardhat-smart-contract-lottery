@@ -18,7 +18,7 @@ const getRequestIdFromTxReceipt = (txReceipt: Receipt): BigNumber => {
 
 !isDevelopment
   ? describe.skip
-  : describe("Raffle", () => {
+  : describe("Raffle Unit Tests", () => {
       let deployer: string
       let raffle: Raffle
       let vrfCoordinatorV2Mock: VRFCoordinatorV2Mock
@@ -165,6 +165,8 @@ const getRequestIdFromTxReceipt = (txReceipt: Receipt): BigNumber => {
           await new Promise(async (resolve, reject) => {
             // setup the listener
             raffle.once("WinnerPicked", async () => {
+              console.log("WinnerPicked event fired!")
+
               try {
                 const recentWinner = await raffle.getRecentWinner()
                 const raffleState = await raffle.getRaffleState()
@@ -181,11 +183,12 @@ const getRequestIdFromTxReceipt = (txReceipt: Receipt): BigNumber => {
                     .add(raffleEntranceFee.mul(additionalEntrants + 1))
                     .toString()
                 )
+
+                resolve(null)
               } catch (error) {
+                console.error(error)
                 reject(error)
               }
-
-              resolve(null)
             })
 
             const tx = await raffle.performUpkeep([])
