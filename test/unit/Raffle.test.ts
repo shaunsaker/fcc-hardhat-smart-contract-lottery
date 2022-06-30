@@ -6,15 +6,8 @@ import { Receipt } from "hardhat-deploy/dist/types"
 import { isDevelopment, networkConfig } from "../../helper-hardhat-config"
 import { Raffle } from "../../typechain"
 import { VRFCoordinatorV2Mock } from "../../typechain/VRFCoordinatorV2Mock"
+import { getRequestIdFromTxReceipt } from "../../utils/getRequestIdFromTxReceipt"
 import { fastForwardToNewBlock } from "../utils/fastForwardToNewBlock"
-
-const getRequestIdFromTxReceipt = (txReceipt: Receipt): BigNumber => {
-  // TODO: .requestId did not exist in args so I think the video is a bit incorrect there
-  const eventArgs = (txReceipt.events as Event[])[1].args as Result
-  const requestId = eventArgs[0]
-
-  return requestId
-}
 
 !isDevelopment
   ? describe.skip
