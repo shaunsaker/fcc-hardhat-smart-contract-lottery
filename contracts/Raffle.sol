@@ -126,7 +126,7 @@ contract Raffle is VRFConsumerBaseV2, KeeperCompatibleInterface {
   // this is called by VRFCoordinatorV2 after performUpkeep passes
   function fulfillRandomWords(uint256, uint256[] memory randomWords) internal override {
     // select the random winner
-    uint256 indexOfWinner = randomWords[0] & s_players.length;
+    uint256 indexOfWinner = randomWords[0] % s_players.length;
     address payable recentWinner = s_players[indexOfWinner];
     s_recentWinner = recentWinner;
 

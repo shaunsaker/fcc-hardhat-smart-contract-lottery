@@ -2,10 +2,19 @@ import { expect } from "chai"
 import { BigNumber, Event } from "ethers"
 import { Result } from "ethers/lib/utils"
 import { deployments, ethers, getNamedAccounts, network } from "hardhat"
+import { Receipt } from "hardhat-deploy/dist/types"
 import { isDevelopment, networkConfig } from "../../helper-hardhat-config"
 import { Raffle } from "../../typechain"
 import { VRFCoordinatorV2Mock } from "../../typechain/VRFCoordinatorV2Mock"
 import { fastForwardToNewBlock } from "../utils/fastForwardToNewBlock"
+
+const getRequestIdFromTxReceipt = (txReceipt: Receipt): BigNumber => {
+  // TODO: .requestId did not exist in args so I think the video is a bit incorrect there
+  const eventArgs = (txReceipt.events as Event[])[1].args as Result
+  const requestId = eventArgs[0]
+
+  return requestId
+}
 
 !isDevelopment
   ? describe.skip
@@ -115,11 +124,9 @@ import { fastForwardToNewBlock } from "../utils/fastForwardToNewBlock"
           const txReceipt = await txResponse.wait(1)
 
           // 1st event is from the vrf coordinator
-          // TODO: .requestId did not exist in args so I think the video is a bit incorrect there
-          const eventArgs = (txReceipt.events as Event[])[1].args as Result
-          const requestId = eventArgs[0]
-          const raffleState = await raffle.getRaffleState()
 
+          const raffleState = await raffle.getRaffleState()
+          const requestId = getRequestIdFromTxReceipt(txReceipt)
           expect(requestId.toNumber()).to.be.greaterThan(0)
           expect(raffleState.toString()).to.equal("1")
         })
@@ -140,18 +147,53 @@ import { fastForwardToNewBlock } from "../utils/fastForwardToNewBlock"
           ).to.be.revertedWith("nonexistent request")
         })
 
-        // TODO:
         it("picks a winner, resets the lottery and sends money", async () => {
           const additionalEntrants = 3
           const startingAccountIndex = 1 // deployer = 0
           const accounts = await ethers.getSigners()
 
-          for (let i = startingAccountIndex; i > startingAccountIndex + additionalEntrants; i++) {
+          for (let i = startingAccountIndex; i < startingAccountIndex + additionalEntrants; i++) {
             const accountConnectedRaffle = raffle.connect(accounts[i])
             await accountConnectedRaffle.enterRaffle({ value: raffleEntranceFee })
           }
 
           const startingTimestamp = await raffle.getLatestTimestamp()
+
+          // we know that account at index 1 will win because we already ran the below "WinnerPicked" block
+          const winnerStartingBalance = await accounts[1].getBalance()
+
+          await new Promise(async (resolve, reject) => {
+            // setup the listener
+            raffle.once("WinnerPicked", async () => {
+              try {
+                const recentWinner = await raffle.getRecentWinner()
+                const raffleState = await raffle.getRaffleState()
+                const endingTimestamp = await raffle.getLatestTimestamp()
+                const numberOfPlayers = await raffle.getNumberOfPlayers()
+                const winnerEndingBalance = await accounts[1].getBalance()
+
+                expect(numberOfPlayers.toString()).to.equal("0")
+                expect(raffleState.toString()).to.equal("0")
+                expect(endingTimestamp.toNumber()).to.be.greaterThan(startingTimestamp.toNumber())
+                expect(winnerEndingBalance.toString()).to.equal(
+                  winnerStartingBalance
+                    // there were x additional entrants + the winner
+                    .add(raffleEntranceFee.mul(additionalEntrants + 1))
+                    .toString()
+                )
+              } catch (error) {
+                reject(error)
+              }
+
+              resolve(null)
+            })
+
+            const tx = await raffle.performUpkeep([])
+            const txReceipt = await tx.wait(1)
+            const requestId = getRequestIdFromTxReceipt(txReceipt)
+
+            await vrfCoordinatorV2Mock.fulfillRandomWords(requestId, raffle.address)
+          })
         })
       })
     })
