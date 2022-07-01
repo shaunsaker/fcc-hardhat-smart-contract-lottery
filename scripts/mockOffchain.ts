@@ -2,6 +2,7 @@
 
 import { Contract } from "ethers"
 import { ethers, network } from "hardhat"
+import { isDevelopment } from "../helper-hardhat-config"
 import { getRequestIdFromTxReceipt } from "../utils/getRequestIdFromTxReceipt"
 
 async function mockKeepers() {
@@ -13,10 +14,8 @@ async function mockKeepers() {
     const txReceipt = await tx.wait(1)
     const requestId = getRequestIdFromTxReceipt(txReceipt) // adapted here
     console.log(`Performed upkeep with RequestId: ${requestId}`)
-    console.log(network.config.chainId)
 
-    // TODO: network.config.chainId is undefined
-    if (network.config.chainId == 31337) {
+    if (isDevelopment) {
       await mockVrf(requestId.toString(), raffle)
     }
   } else {
