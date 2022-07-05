@@ -28,7 +28,7 @@ contract Raffle is VRFConsumerBaseV2, KeeperCompatibleInterface {
   /* State Variables */
   uint256 private immutable i_entranceFee;
   address payable[] private s_players;
-  VRFCoordinatorV2Interface private immutable i_vrfCoordindator;
+  VRFCoordinatorV2Interface private immutable i_vrfCoordinator;
   bytes32 private immutable i_gasLane;
   uint64 private immutable i_subscriptionId;
   uint16 private constant REQUEST_CONFIRMATIONS = 3;
@@ -45,15 +45,15 @@ contract Raffle is VRFConsumerBaseV2, KeeperCompatibleInterface {
   event WinnerPicked(address indexed player);
 
   constructor(
-    address vrfCoorindatorV2, // contract
+    address vrfCoordinatorV2, // contract
     uint256 entranceFee,
     bytes32 gasLane,
     uint64 subscriptionId,
     uint32 callbackGasLimit,
     uint256 interval
-  ) VRFConsumerBaseV2(vrfCoorindatorV2) {
+  ) VRFConsumerBaseV2(vrfCoordinatorV2) {
     i_entranceFee = entranceFee;
-    i_vrfCoordindator = VRFCoordinatorV2Interface(vrfCoorindatorV2);
+    i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinatorV2);
     i_gasLane = gasLane;
     i_subscriptionId = subscriptionId;
     i_callbackGasLimit = callbackGasLimit;
@@ -110,7 +110,7 @@ contract Raffle is VRFConsumerBaseV2, KeeperCompatibleInterface {
     // close the Raffle so that no one can enter while we are drawing the winner
     s_raffleState = RaffleState.CALCULATING;
 
-    uint256 requestId = i_vrfCoordindator.requestRandomWords(
+    uint256 requestId = i_vrfCoordinator.requestRandomWords(
       i_gasLane,
       i_subscriptionId,
       REQUEST_CONFIRMATIONS,
