@@ -1,4 +1,4 @@
-import { ethers, network } from "hardhat"
+import { ethers } from "hardhat"
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { isDevelopment } from "../helper-hardhat-config"
 

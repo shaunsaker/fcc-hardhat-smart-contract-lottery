@@ -10,5 +10,7 @@ module.exports = {
   parserOptions: {
     ecmaVersion: 12,
   },
-  rules: {},
+  rules: {
+    "@typescript-eslint/no-unused-vars": "error",
+  },
 }

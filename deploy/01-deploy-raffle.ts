@@ -1,11 +1,6 @@
 import { ethers, network } from "hardhat"
 import { HardhatRuntimeEnvironment } from "hardhat/types"
-import {
-  BLOCK_CONFIRMATIONS,
-  developmentChains,
-  isDevelopment,
-  networkConfig,
-} from "../helper-hardhat-config"
+import { BLOCK_CONFIRMATIONS, isDevelopment, networkConfig } from "../helper-hardhat-config"
 import { verify } from "../utils/verify"
 
 const VRF_SUB_FUND_AMOUNT = ethers.utils.parseEther("2")
